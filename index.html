@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JOO — 도시는 읽는 만큼 보입니다</title>
+<meta name="description" content="부동산과 도시를 공부하고, 서비스를 만들고, 이야기를 씁니다. 협업·프로젝트 문의를 환영합니다.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  :root{
+    --paper:#f5f1e6;
+    --paper-deep:#ede7d6;
+    --ink:#1e1b15;
+    --ink-60:#55503f;
+    --ink-35:#938d78;
+    --rule:#c9c2ad;
+    --verm:#c9401a;
+    --verm-deep:#a53312;
+    --serif:'Noto Serif KR', serif;
+    --sans:'Pretendard Variable', Pretendard, -apple-system, sans-serif;
+    --mono:'IBM Plex Mono', monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:var(--sans);background:var(--paper);color:var(--ink);line-height:1.75;
+    -webkit-font-smoothing:antialiased;overflow-x:hidden;
+  }
+  body::before{
+    content:'';position:fixed;inset:0;pointer-events:none;z-index:1;opacity:.5;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.45 0 0 0 0 0.42 0 0 0 0 0.34 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  ::selection{background:var(--verm);color:var(--paper)}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 28px;position:relative;z-index:2}
+
+  /* ============ 제도판 크로스헤어 커서 ============ */
+  .xh-v,.xh-h{position:fixed;z-index:9998;pointer-events:none;background:rgba(30,27,21,.14)}
+  .xh-v{top:0;bottom:0;width:1px}
+  .xh-h{left:0;right:0;height:1px}
+  .xh-dot{position:fixed;z-index:9999;pointer-events:none;width:9px;height:9px;border:1.5px solid var(--verm);border-radius:50%;transform:translate(-50%,-50%);transition:width .2s,height .2s,background .2s}
+  .xh-dot.hovering{width:26px;height:26px;background:rgba(201,64,26,.12)}
+  .xh-label{position:fixed;z-index:9999;pointer-events:none;font-family:var(--mono);font-size:.6rem;color:var(--ink-35);transform:translate(14px,14px);letter-spacing:.05em;white-space:nowrap}
+  @media(hover:none),(max-width:768px){.xh-v,.xh-h,.xh-dot,.xh-label{display:none}}
+
+  /* ============ 도면 외곽 프레임 ============ */
+  .sheet-frame{position:fixed;inset:10px;border:1.5px solid var(--ink);pointer-events:none;z-index:90}
+  .sheet-frame::before{content:'';position:absolute;inset:4px;border:.5px solid rgba(30,27,21,.35)}
+  .corner{position:fixed;z-index:90;pointer-events:none;font-family:var(--mono);font-size:.58rem;letter-spacing:.12em;color:var(--ink-35);padding:4px 8px}
+  .corner.tl{top:14px;left:16px}
+  .corner.br{bottom:14px;right:16px;text-align:right}
+  @media(max-width:768px){.sheet-frame{inset:6px}.corner{display:none}}
+
+  /* ============ nav ============ */
+  nav{position:fixed;top:10px;left:10px;right:10px;z-index:80;background:rgba(245,241,230,.92);backdrop-filter:blur(8px);border-bottom:1.5px solid var(--ink)}
+  .nav-inner{max-width:1120px;margin:0 auto;padding:16px 28px;display:flex;align-items:center;justify-content:space-between}
+  .logo{font-family:var(--serif);font-weight:900;font-size:1.25rem;letter-spacing:.06em;text-decoration:none;color:var(--ink);display:flex;align-items:center;gap:10px}
+  .logo .reg{font-family:var(--mono);font-weight:400;font-size:.85rem;color:var(--verm)}
+  .nav-links{display:flex;gap:26px;align-items:center}
+  .nav-links a{text-decoration:none;color:var(--ink-60);font-size:.88rem;font-weight:500;font-family:var(--mono);letter-spacing:-.02em;transition:color .2s}
+  .nav-links a:hover{color:var(--verm)}
+  .nav-links a .no{color:var(--verm);font-size:.7rem;vertical-align:super;margin-right:2px}
+  .nav-cta{border:1.5px solid var(--ink);color:var(--ink) !important;padding:8px 18px;transition:all .25s !important;position:relative;overflow:hidden}
+  .nav-cta::before{content:'';position:absolute;inset:0;background:var(--verm);transform:translateY(101%);transition:transform .3s cubic-bezier(.22,1,.36,1);z-index:-1}
+  .nav-cta:hover{color:var(--paper) !important;border-color:var(--verm)}
+  .nav-cta:hover::before{transform:none}
+  @media(max-width:720px){.nav-links a:not(.nav-cta){display:none}}
+
+  /* ============ hero ============ */
+  header{position:relative;min-height:100svh;display:flex;align-items:center;overflow:hidden;padding:120px 0 80px}
+  #city3d{position:absolute;top:0;right:0;width:62%;height:100%;z-index:0}
+  #city3d canvas{display:block}
+  .lot-label{position:absolute;z-index:3;font-family:var(--mono);font-size:.72rem;color:var(--verm);letter-spacing:.08em;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .6s;transform:translate(-50%,-130%)}
+  .lot-label::after{content:'';position:absolute;left:50%;top:100%;width:1px;height:26px;background:var(--verm)}
+  .lot-label.show{opacity:1}
+  @media(max-width:768px){#city3d{width:120%;right:-25%;opacity:.4}.lot-label{display:none}}
+
+  .hero-content{position:relative;z-index:2;max-width:1120px;margin:0 auto;padding:0 28px;width:100%}
+  .hero-meta{font-family:var(--mono);font-size:.68rem;letter-spacing:.22em;color:var(--ink-60);margin-bottom:34px;display:flex;gap:26px;flex-wrap:wrap;opacity:0;animation:fadeUp .8s .15s forwards}
+  .hero-meta b{color:var(--verm);font-weight:500}
+  .hero-line{font-family:var(--serif);font-weight:700;font-size:clamp(2.5rem,6.6vw,4.8rem);line-height:1.3;letter-spacing:-.015em;max-width:860px;min-height:2.6em;color:var(--ink)}
+  .hero-line .ch{display:inline-block;opacity:0;transform:translateY(.5em);animation:chIn .65s cubic-bezier(.22,1,.36,1) forwards}
+  @keyframes chIn{to{opacity:1;transform:none}}
+  .hero-line em{font-style:normal;color:var(--verm);position:relative;white-space:nowrap}
+  .hero-line em .u{position:absolute;left:-2%;bottom:-.08em;width:104%;height:.28em;overflow:visible;pointer-events:none}
+  .hero-line em .u path{fill:none;stroke:var(--verm);stroke-width:3;opacity:.55;stroke-linecap:round}
+  .hero-sub{margin-top:34px;font-size:1.06rem;color:var(--ink-60);max-width:520px;opacity:0;animation:fadeUp .9s 1.15s forwards;border-left:2px solid var(--rule);padding-left:18px}
+  .hero-actions{margin-top:46px;display:flex;gap:14px;flex-wrap:wrap;align-items:center;opacity:0;animation:fadeUp .9s 1.4s forwards}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+
+  .btn{display:inline-flex;align-items:center;gap:10px;text-decoration:none;font-weight:600;font-size:.95rem;padding:15px 30px;transition:all .25s;position:relative;overflow:hidden;z-index:1}
+  .btn-fill{background:var(--ink);color:var(--paper)}
+  .btn-fill::before{content:'';position:absolute;inset:0;background:var(--verm);transform:translateY(101%);transition:transform .32s cubic-bezier(.22,1,.36,1);z-index:-1}
+  .btn-fill:hover::before{transform:none}
+  .btn-line{border:1.5px solid var(--ink);color:var(--ink)}
+  .btn-line:hover{background:var(--ink);color:var(--paper)}
+
+  .copy-switch{margin-top:38px;display:inline-flex;align-items:center;gap:10px;font-family:var(--mono);font-size:.68rem;letter-spacing:.08em;color:var(--ink-35);opacity:0;animation:fadeUp .9s 1.6s forwards}
+  .copy-switch button{border:1px solid var(--rule);background:transparent;padding:4px 12px;font-family:var(--mono);font-size:.7rem;color:var(--ink-60);cursor:pointer;transition:all .2s}
+  .copy-switch button:hover{border-color:var(--verm);color:var(--verm)}
+
+  .scroll-hint{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);z-index:2;font-family:var(--mono);font-size:.6rem;letter-spacing:.3em;color:var(--ink-35);display:flex;flex-direction:column;align-items:center;gap:8px}
+  .scroll-hint::after{content:'';width:1px;height:40px;background:var(--ink-35);animation:hintPulse 1.8s ease-in-out infinite}
+  @keyframes hintPulse{0%,100%{opacity:.25;transform:scaleY(.6)}50%{opacity:1;transform:none}}
+
+  /* ============ 마퀴 ============ */
+  .marquee{overflow:hidden;border-top:1.5px solid var(--ink);border-bottom:1.5px solid var(--ink);background:var(--paper-deep);position:relative;z-index:2}
+  .marquee-track{display:inline-flex;white-space:nowrap;animation:scrollX 30s linear infinite;padding:13px 0}
+  .marquee:hover .marquee-track{animation-play-state:paused}
+  .marquee-track span{font-family:var(--mono);font-size:.82rem;letter-spacing:.14em;color:var(--ink-60);padding:0 24px;display:inline-flex;align-items:center;gap:24px}
+  .marquee-track span::after{content:'⌖';color:var(--verm);font-size:.8rem}
+  @keyframes scrollX{to{transform:translateX(-50%)}}
+
+  /* ============ 치수선 디바이더 ============ */
+  .dim{max-width:1120px;margin:0 auto;padding:56px 28px 0;display:flex;align-items:center;gap:14px;font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;color:var(--ink-35);position:relative;z-index:2}
+  .dim::before,.dim::after{content:'';flex:1;height:1px;background:var(--ink-35)}
+  .dim .tick{color:var(--ink-35)}
+
+  /* ============ sections ============ */
+  section{padding:96px 0;position:relative;z-index:2}
+  .sec-head{display:flex;align-items:baseline;gap:18px;margin-bottom:16px}
+  .sec-no{font-family:var(--mono);font-size:.72rem;color:var(--verm);letter-spacing:.12em;border:1px solid var(--verm);padding:3px 9px}
+  .sec-label{font-family:var(--mono);font-size:.72rem;letter-spacing:.24em;color:var(--ink-35);text-transform:uppercase}
+  .sec-title{font-family:var(--serif);font-weight:700;font-size:clamp(1.6rem,3.4vw,2.4rem);line-height:1.42;margin-bottom:22px}
+  .sec-title .vm{color:var(--verm)}
+
+  /* ---------- about ---------- */
+  .about-grid{display:grid;grid-template-columns:1.05fr 1fr;gap:70px;align-items:start}
+  .about-lead{font-size:1.05rem;color:var(--ink-60)}
+  .about-lead strong{color:var(--ink);font-weight:600;background:linear-gradient(transparent 64%,rgba(201,64,26,.22) 0)}
+  .ledger{border-top:1.5px solid var(--ink)}
+  .ledger-row{padding:24px 6px;border-bottom:1px solid var(--rule);display:grid;grid-template-columns:110px 1fr;gap:20px;align-items:baseline;transition:all .3s;position:relative}
+  .ledger-row::before{content:'';position:absolute;left:0;top:0;bottom:-1px;width:0;background:rgba(201,64,26,.05);transition:width .35s cubic-bezier(.22,1,.36,1)}
+  .ledger-row:hover::before{width:100%}
+  .ledger-row:hover{padding-left:16px}
+  .ledger-row h3{font-family:var(--serif);font-size:1.08rem;font-weight:700}
+  .ledger-row h3 small{display:block;font-family:var(--mono);font-size:.62rem;letter-spacing:.18em;color:var(--verm);font-weight:500;margin-top:3px}
+  .ledger-row p{font-size:.9rem;color:var(--ink-60)}
+  @media(max-width:780px){.about-grid{grid-template-columns:1fr;gap:44px}}
+
+  /* ---------- now ---------- */
+  #now{background:var(--paper-deep);border-top:1.5px solid var(--ink);border-bottom:1.5px solid var(--ink)}
+  .now-table{margin-top:42px;border:1.5px solid var(--ink);background:var(--paper)}
+  .now-row{display:grid;grid-template-columns:86px 1.2fr 2fr 130px;align-items:center;border-bottom:1px solid var(--rule);transition:background .25s;position:relative}
+  .now-row:last-child{border-bottom:none}
+  .now-row:hover{background:rgba(201,64,26,.04)}
+  .now-cell{padding:22px 22px;min-width:0}
+  .now-no{font-family:var(--mono);font-size:.78rem;color:var(--ink-35);border-right:1px solid var(--rule);text-align:center;align-self:stretch;display:flex;align-items:center;justify-content:center;transition:color .25s,background .25s}
+  .now-row:hover .now-no{background:var(--verm);color:var(--paper)}
+  .now-row h3{font-family:var(--serif);font-size:1.1rem;font-weight:700}
+  .now-row .desc{font-size:.88rem;color:var(--ink-60)}
+  .stamp-badge{font-family:var(--mono);font-size:.66rem;letter-spacing:.1em;color:var(--verm);border:1.5px solid var(--verm);padding:6px 10px;text-align:center;transform:rotate(-3deg);display:inline-block;justify-self:center;background:var(--paper)}
+  .now-head{display:grid;grid-template-columns:86px 1.2fr 2fr 130px;background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:.62rem;letter-spacing:.16em}
+  .now-head div{padding:10px 22px}
+  .now-head div:first-child{text-align:center;padding:10px 0}
+  @media(max-width:820px){
+    .now-row,.now-head{grid-template-columns:1fr}
+    .now-head div:not(:first-child){display:none}
+    .now-head div:first-child{text-align:left;padding:10px 22px}
+    .now-no{border-right:none;border-bottom:1px solid var(--rule);padding:8px;justify-content:flex-start;padding-left:22px}
+    .stamp-badge{margin:0 22px 20px;justify-self:start}
+    .now-cell{padding:16px 22px}
+  }
+
+  /* ---------- work ---------- */
+  .work-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-top:46px;border:1.5px solid var(--ink)}
+  .work-card{padding:38px 30px 30px;background:var(--paper);display:flex;flex-direction:column;min-height:330px;position:relative;border-right:1px solid var(--rule);transition:background .3s}
+  .work-card:last-child{border-right:none}
+  .work-card:hover{background:#fdfbf4}
+  .work-card::before{content:'+';position:absolute;top:8px;left:10px;color:var(--ink-35);font-family:var(--mono);font-size:.8rem}
+  .work-card::after{content:'+';position:absolute;bottom:8px;right:10px;color:var(--ink-35);font-family:var(--mono);font-size:.8rem}
+  .work-sheet{font-family:var(--mono);font-size:.62rem;letter-spacing:.18em;color:var(--ink-35);margin-bottom:20px;display:flex;justify-content:space-between}
+  .work-sheet b{color:var(--verm);font-weight:500}
+  .work-card h3{font-family:var(--serif);font-size:1.35rem;font-weight:700;margin-bottom:14px;position:relative;display:inline-block}
+  .work-card h3::after{content:'';position:absolute;left:0;bottom:-6px;width:0;height:2px;background:var(--verm);transition:width .35s cubic-bezier(.22,1,.36,1)}
+  .work-card:hover h3::after{width:100%}
+  .work-card p{font-size:.9rem;color:var(--ink-60);flex:1}
+  .work-meta{margin-top:24px;font-family:var(--mono);font-size:.68rem;letter-spacing:.06em;color:var(--ink-35);border-top:1px solid var(--rule);padding-top:14px;display:flex;justify-content:space-between;align-items:center}
+  .work-meta .arrow{color:var(--verm);transition:transform .3s}
+  .work-card:hover .arrow{transform:translateX(6px)}
+  @media(max-width:820px){.work-grid{grid-template-columns:1fr}.work-card{border-right:none;border-bottom:1px solid var(--rule)}.work-card:last-child{border-bottom:none}}
+
+  /* ---------- contact ---------- */
+  #contact{background:var(--ink);color:var(--paper);border-top:1.5px solid var(--ink)}
+  #contact .sec-no{border-color:var(--verm);color:var(--verm)}
+  #contact .sec-label{color:rgba(245,241,230,.4)}
+  .contact-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:60px;align-items:center}
+  .contact-line{font-family:var(--serif);font-weight:700;font-size:clamp(1.8rem,4vw,2.8rem);line-height:1.48;margin-bottom:22px}
+  .contact-line .vm{color:#e86a44}
+  .contact-sub{color:rgba(245,241,230,.6);font-size:1rem;margin-bottom:42px;max-width:460px}
+  .btn-paper{background:var(--paper);color:var(--ink);font-size:1rem;padding:17px 36px}
+  .btn-paper::before{content:'';position:absolute;inset:0;background:var(--verm);transform:translateY(101%);transition:transform .32s cubic-bezier(.22,1,.36,1);z-index:-1}
+  .btn-paper:hover{color:var(--paper)}
+  .btn-paper:hover::before{transform:none}
+  .contact-mail{margin-top:18px;font-family:var(--mono);font-size:.78rem;color:rgba(245,241,230,.4);letter-spacing:.06em}
+  .socials{margin-top:44px;display:flex;gap:14px}
+  .socials a{width:44px;height:44px;border:1px solid rgba(245,241,230,.25);display:flex;align-items:center;justify-content:center;color:rgba(245,241,230,.65);text-decoration:none;transition:all .3s}
+  .socials a:hover{border-color:#e86a44;color:#e86a44}
+  .socials svg{width:17px;height:17px;fill:currentColor}
+
+  .seal-wrap{display:flex;justify-content:center}
+  .seal{width:170px;height:170px;border:4px solid var(--verm);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;transform:rotate(-7deg) scale(1.5);opacity:0;transition:transform .5s cubic-bezier(.34,1.56,.64,1),opacity .4s;background:rgba(201,64,26,.06)}
+  .seal.stamped{transform:rotate(-7deg) scale(1);opacity:1}
+  .seal .big{font-family:var(--serif);font-weight:900;font-size:3.4rem;line-height:1;color:var(--verm)}
+  .seal .small{font-family:var(--mono);font-size:.6rem;letter-spacing:.3em;color:var(--verm)}
+  @media(max-width:780px){.contact-grid{grid-template-columns:1fr}.seal-wrap{justify-content:flex-start}.seal{width:140px;height:140px}}
+
+  /* ---------- 표제란 푸터 ---------- */
+  footer{background:var(--ink);color:rgba(245,241,230,.55);padding:0 0 46px;position:relative;z-index:2}
+  .titleblock{max-width:1120px;margin:0 auto;padding:0 28px}
+  .tb-table{border:1px solid rgba(245,241,230,.3);display:grid;grid-template-columns:repeat(4,1fr);font-family:var(--mono);font-size:.66rem;letter-spacing:.08em}
+  .tb-cell{padding:12px 16px;border-right:1px solid rgba(245,241,230,.18)}
+  .tb-cell:last-child{border-right:none}
+  .tb-cell .k{display:block;font-size:.56rem;color:rgba(245,241,230,.35);letter-spacing:.2em;margin-bottom:3px}
+  .tb-cell .v{color:rgba(245,241,230,.8)}
+  .tb-cell .v.vm{color:#e86a44}
+  footer .foot-note{text-align:center;margin-top:24px;font-size:.72rem;color:rgba(245,241,230,.3);font-family:var(--mono);letter-spacing:.08em}
+  @media(max-width:680px){.tb-table{grid-template-columns:repeat(2,1fr)}.tb-cell:nth-child(2){border-right:none}.tb-cell:nth-child(-n+2){border-bottom:1px solid rgba(245,241,230,.18)}}
+
+  /* ---------- reveal ---------- */
+  .reveal{opacity:0;transform:translateY(26px);transition:opacity .8s cubic-bezier(.22,1,.36,1),transform .8s cubic-bezier(.22,1,.36,1)}
+  .reveal.visible{opacity:1;transform:none}
+  .reveal.d1{transition-delay:.12s}.reveal.d2{transition-delay:.24s}.reveal.d3{transition-delay:.36s}
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation:none !important;transition:none !important}
+    .reveal{opacity:1;transform:none}
+    .seal{opacity:1;transform:rotate(-7deg)}
+    .xh-v,.xh-h,.xh-dot,.xh-label{display:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="xh-v" id="xhV"></div>
+<div class="xh-h" id="xhH"></div>
+<div class="xh-dot" id="xhDot"></div>
+<div class="xh-label" id="xhLabel">X:0000 Y:0000</div>
+
+<div class="sheet-frame"></div>
+<div class="corner tl">DWG. JOO-2026 · PERSONAL BRAND SHEET</div>
+<div class="corner br">3D MASSING MODEL · SCALE 1:CITY · DRAWN BY JOO</div>
+
+<nav id="nav">
+  <div class="nav-inner">
+    <a class="logo" href="#top" data-hover><span class="reg">⌖</span>JOO</a>
+    <div class="nav-links">
+      <a href="#about" data-hover><span class="no">01</span>소개</a>
+      <a href="#now" data-hover><span class="no">02</span>지금</a>
+      <a href="#work" data-hover><span class="no">03</span>작업</a>
+      <a class="nav-cta" href="mailto:redlion21c@gmail.com?subject=[협업 문의] " data-hover>프로젝트 문의</a>
+    </div>
+  </div>
+</nav>
+
+<header id="top">
+  <!-- 3D 매싱 모델 (Three.js) -->
+  <div id="city3d"></div>
+  <div class="lot-label" id="lotLabel">137-4 · 나의 자리</div>
+
+  <div class="hero-content">
+    <p class="hero-meta"><span>도면번호 <b>JOO-01</b></span><span>도면유형 <b>3D 매싱 모델</b></span><span>용도 <b>사람</b></span></p>
+    <h1 class="hero-line" id="heroLine"></h1>
+    <p class="hero-sub">
+      미국 주거용 부동산 실무 경험과 대학원에서의 도시 연구를 바탕으로,
+      부동산 서비스 개발과 강의, 집필을 병행합니다.
+      현장의 감각과 연구의 깊이를 잇는 것이 제 일입니다.
+    </p>
+    <div class="hero-actions">
+      <a class="btn btn-fill" href="mailto:redlion21c@gmail.com?subject=[협업 문의] " data-hover>함께 만들 이야기가 있다면 →</a>
+      <a class="btn btn-line" href="#work" data-hover>작업 보기</a>
+    </div>
+  </div>
+  <div class="scroll-hint">SCROLL</div>
+</header>
+
+<div class="marquee">
+  <div class="marquee-track" id="marqueeTrack"></div>
+</div>
+
+<section id="about">
+  <div class="wrap">
+    <div class="about-grid">
+      <div class="reveal">
+        <div class="sec-head"><span class="sec-no">SHT 01</span><span class="sec-label">Who I Am · 소개</span></div>
+        <h2 class="sec-title">현장에서 시작해, 연구를 지나,<br><span class="vm">이야기</span>로 갑니다.</h2>
+        <p class="about-lead">
+          캘리포니아에서 <strong>주거용 부동산 실무</strong>를 했습니다. MLS 매물 분석부터 에스크로,
+          임차인 보호법까지 — 계약서 뒤에 숨은 사람들의 사정을 읽는 일이었습니다.
+          지금은 <strong>단국대학교 부동산·건설 대학원</strong>에서 도시계획과 부동산, 건축을
+          하나의 질문으로 엮어 공부합니다. 그리고 그 사이에서 발견한 것들을
+          <strong>서비스와 콘텐츠, 글</strong>로 옮기고 있습니다.
+        </p>
+      </div>
+      <div class="ledger reveal d1">
+        <div class="ledger-row" data-hover>
+          <h3>현장<small>PRACTICE</small></h3>
+          <p>미국 주거용 부동산 실무 — MLS, 에스크로, 캘리포니아 임차인 보호법. 이론이 아니라 거래의 현장에서 배운 부동산.</p>
+        </div>
+        <div class="ledger-row" data-hover>
+          <h3>연구<small>RESEARCH</small></h3>
+          <p>단국대 부동산·건설 대학원. 도시계획 × 부동산 × 건축 — 세 렌즈를 겹쳐 도시를 읽습니다.</p>
+        </div>
+        <div class="ledger-row" data-hover>
+          <h3>이야기<small>STORY</small></h3>
+          <p>경험서와 에세이를 쓰고, 캐릭터 콘텐츠를 만듭니다. 어려운 이야기를 사람의 언어로 옮기는 일.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="dim"><span class="tick">|←</span> 소개에서 작업까지 · 스크롤 두 번 <span class="tick">→|</span></div>
+
+<section id="now">
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="sec-no">SHT 02</span><span class="sec-label">Now · 지금 만드는 것</span></div>
+    <h2 class="sec-title reveal">공사 중인 것들 — <span class="vm">진행 대장</span></h2>
+    <div class="now-table reveal d1">
+      <div class="now-head"><div>NO.</div><div>건명</div><div>개요</div><div>현황</div></div>
+      <div class="now-row" data-hover>
+        <div class="now-no">001</div>
+        <div class="now-cell"><h3>다내꼬</h3></div>
+        <div class="now-cell"><p class="desc">부동산 정보의 문턱을 낮추는 웹 서비스. Next.js · TypeScript 기반으로 직접 설계하고 만드는 중.</p></div>
+        <div class="now-cell"><span class="stamp-badge">시공 중</span></div>
+      </div>
+      <div class="now-row" data-hover>
+        <div class="now-no">002</div>
+        <div class="now-cell"><h3>경험서 집필</h3></div>
+        <div class="now-cell"><p class="desc">미국 부동산 현장에서 겪은 장면들을 1인칭 서사와 실무 해설로 엮은 책.</p></div>
+        <div class="now-cell"><span class="stamp-badge">집필 중</span></div>
+      </div>
+      <div class="now-row" data-hover>
+        <div class="now-no">003</div>
+        <div class="now-cell"><h3>강의 준비</h3></div>
+        <div class="now-cell"><p class="desc">도시·부동산 교양, 미국 부동산 실무, 상권 읽기 — 현장과 연구를 잇는 강의.</p></div>
+        <div class="now-cell"><span class="stamp-badge">설계 중</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="work">
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="sec-no">SHT 03</span><span class="sec-label">Selected Work · 대표 작업</span></div>
+    <h2 class="sec-title reveal">세 갈래의 작업, 하나의 질문 —<br>"도시는 어떻게 <span class="vm">이야기</span>가 되는가"</h2>
+    <div class="work-grid reveal d1">
+      <div class="work-card" data-hover>
+        <p class="work-sheet"><span>DWG A-01</span><b>WEB SERVICE</b></p>
+        <h3>다내꼬</h3>
+        <p>부동산 정보를 누구나 읽을 수 있는 언어로 바꾸는 웹 프로젝트. 기획부터 개발까지 직접 만들고 있는 서비스입니다.</p>
+        <p class="work-meta"><span>NEXT.JS · TYPESCRIPT</span><span class="arrow">→</span></p>
+      </div>
+      <div class="work-card" data-hover>
+        <p class="work-sheet"><span>DWG A-02</span><b>CONTENT</b></p>
+        <h3>돌아온 탕묘, 유칠복</h3>
+        <p>집 나갔다 돌아온 고양이 '유칠복'이 주인공인 유튜브 쇼츠·웹툰 시리즈. AI 제작 워크플로우로 캐릭터 세계관을 짓고 있습니다.</p>
+        <p class="work-meta"><span>SHORTS · WEBTOON</span><span class="arrow">→</span></p>
+      </div>
+      <div class="work-card" data-hover>
+        <p class="work-sheet"><span>DWG A-03</span><b>LECTURE</b></p>
+        <h3>도시를 읽는 강의</h3>
+        <p>도시·부동산 교양부터 미국 부동산 실무, 상권 분석까지. 현장 경험과 대학원 연구를 한 교안에 담습니다.</p>
+        <p class="work-meta"><span>교양 · 실무 · 상권</span><span class="arrow">→</span></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="contact">
+  <div class="wrap">
+    <div class="contact-grid">
+      <div>
+        <div class="sec-head reveal"><span class="sec-no">SHT 04</span><span class="sec-label">Contact · 문의</span></div>
+        <p class="contact-line reveal">당신의 프로젝트에<br><span class="vm">도시와 이야기</span>가 필요하다면.</p>
+        <p class="contact-sub reveal d1">강의, 자문, 콘텐츠 협업, 웹 프로젝트 — 무엇이든 메일 한 통이면 충분합니다. 하루 안에 답장드립니다.</p>
+        <div class="reveal d2">
+          <a class="btn btn-paper" href="mailto:redlion21c@gmail.com?subject=[협업 문의] " data-hover>협업 문의 보내기 ✉</a>
+          <p class="contact-mail">redlion21c@gmail.com</p>
+        </div>
+        <div class="socials reveal d3">
+          <a href="#" title="Instagram (준비 중)" aria-label="Instagram" data-hover>
+            <svg viewBox="0 0 24 24"><path d="M12 2.2c3.2 0 3.6 0 4.9.1 1.2.1 1.8.2 2.2.4.6.2 1 .5 1.4.9.4.4.7.8.9 1.4.2.4.4 1 .4 2.2.1 1.3.1 1.7.1 4.9s0 3.6-.1 4.9c-.1 1.2-.2 1.8-.4 2.2-.2.6-.5 1-.9 1.4-.4.4-.8.7-1.4.9-.4.2-1 .4-2.2.4-1.3.1-1.7.1-4.9.1s-3.6 0-4.9-.1c-1.2-.1-1.8-.2-2.2-.4-.6-.2-1-.5-1.4-.9-.4-.4-.7-.8-.9-1.4-.2-.4-.4-1-.4-2.2C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.9c.1-1.2.2-1.8.4-2.2.2-.6.5-1 .9-1.4.4-.4.8-.7 1.4-.9.4-.2 1-.4 2.2-.4C8.4 2.2 8.8 2.2 12 2.2zm0 1.8c-3.1 0-3.5 0-4.8.1-1.1.1-1.5.2-1.9.3-.5.2-.8.4-1.1.7-.3.3-.5.6-.7 1.1-.1.4-.3.8-.3 1.9-.1 1.2-.1 1.6-.1 4.8s0 3.5.1 4.8c.1 1.1.2 1.5.3 1.9.2.5.4.8.7 1.1.3.3.6.5 1.1.7.4.1.8.3 1.9.3 1.2.1 1.6.1 4.8.1s3.5 0 4.8-.1c1.1-.1 1.5-.2 1.9-.3.5-.2.8-.4 1.1-.7.3-.3.5-.6.7-1.1.1-.4.3-.8.3-1.9.1-1.2.1-1.6.1-4.8s0-3.5-.1-4.8c-.1-1.1-.2-1.5-.3-1.9-.2-.5-.4-.8-.7-1.1-.3-.3-.6-.5-1.1-.7-.4-.1-.8-.3-1.9-.3-1.2-.1-1.6-.1-4.8-.1zm0 3.1a5 5 0 110 10 5 5 0 010-10zm0 8.2a3.2 3.2 0 100-6.5 3.2 3.2 0 000 6.5zm6.4-8.4a1.2 1.2 0 11-2.3 0 1.2 1.2 0 012.3 0z"/></svg>
+          </a>
+          <a href="#" title="Facebook (준비 중)" aria-label="Facebook" data-hover>
+            <svg viewBox="0 0 24 24"><path d="M24 12.1C24 5.4 18.6 0 12 0S0 5.4 0 12.1C0 18.1 4.4 23.1 10.1 24v-8.4H7.1v-3.5h3v-2.7c0-3 1.8-4.7 4.5-4.7 1.3 0 2.7.2 2.7.2v3h-1.5c-1.5 0-2 .9-2 1.9v2.3h3.4l-.5 3.5h-2.9V24C19.6 23.1 24 18.1 24 12.1z"/></svg>
+          </a>
+        </div>
+      </div>
+      <div class="seal-wrap">
+        <div class="seal" id="seal">
+          <span class="big">쭈</span>
+          <span class="small">확인필 · 24H 回信</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="titleblock">
+    <div class="tb-table">
+      <div class="tb-cell"><span class="k">PROJECT</span><span class="v">JOO — PERSONAL BRAND</span></div>
+      <div class="tb-cell"><span class="k">DRAWN BY</span><span class="v">JOO</span></div>
+      <div class="tb-cell"><span class="k">DATE</span><span class="v">2026.07</span></div>
+      <div class="tb-cell"><span class="k">CONTACT</span><span class="v vm">redlion21c@gmail.com</span></div>
+    </div>
+    <p class="foot-note">© 2026 JOO — 도시를 읽고, 이야기를 만듭니다 · CITIES, READ &amp; RETOLD</p>
+  </div>
+</footer>
+
+<script>
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ================= 3D 도시 매싱 모델 ================= */
+  (function city3D(){
+    const container = document.getElementById('city3d');
+    if(!container || !window.THREE) return;
+
+    const PAPER = 0xf5f1e6, INK = 0x1e1b15, VERM = 0xc9401a;
+
+    const scene = new THREE.Scene();
+
+    // 정투영 카메라 = 도면의 액소노메트릭 느낌 유지
+    let W = container.offsetWidth, H = container.offsetHeight;
+    const FR = 9.5; // frustum half-size
+    const camera = new THREE.OrthographicCamera(-FR*W/H, FR*W/H, FR, -FR, 0.1, 100);
+    camera.position.set(14, 11.5, 14);
+    camera.lookAt(0, 1.2, 0);
+
+    const renderer = new THREE.WebGLRenderer({alpha:true, antialias:true});
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.setSize(W, H);
+    container.appendChild(renderer.domElement);
+
+    // 은은한 종이빛 조명
+    scene.add(new THREE.HemisphereLight(0xfffbf0, 0xd8d0ba, 0.95));
+    const sun = new THREE.DirectionalLight(0xfff4e0, 0.5);
+    sun.position.set(6, 14, 4);
+    scene.add(sun);
+
+    const city = new THREE.Group();
+    scene.add(city);
+
+    /* ---- 바닥: 대지 경계 + 격자 + 도로 ---- */
+    const gridMat = new THREE.LineBasicMaterial({color:INK, transparent:true, opacity:.14});
+    const gridGeo = new THREE.BufferGeometry();
+    const gv = [];
+    for(let i=-5;i<=5;i++){
+      gv.push(i,0,-5, i,0,5);
+      gv.push(-5,0,i, 5,0,i);
+    }
+    gridGeo.setAttribute('position', new THREE.Float32BufferAttribute(gv,3));
+    city.add(new THREE.LineSegments(gridGeo, gridMat));
+
+    // 외곽 경계 (굵은 잉크선)
+    const bGeo = new THREE.BufferGeometry();
+    bGeo.setAttribute('position', new THREE.Float32BufferAttribute([
+      -5,0,-5,  5,0,-5,   5,0,-5,  5,0,5,   5,0,5,  -5,0,5,   -5,0,5,  -5,0,-5
+    ],3));
+    city.add(new THREE.LineSegments(bGeo, new THREE.LineBasicMaterial({color:INK, transparent:true, opacity:.55})));
+
+    // 도로 (살짝 어두운 띠)
+    const roadMat = new THREE.MeshLambertMaterial({color:0xe4ddc9, transparent:true, opacity:.9});
+    const roadV = new THREE.Mesh(new THREE.PlaneGeometry(1, 10), roadMat);
+    roadV.rotation.x = -Math.PI/2; roadV.position.set(0, 0.005, 0);
+    city.add(roadV);
+    const roadH = new THREE.Mesh(new THREE.PlaneGeometry(10, 1), roadMat.clone());
+    roadH.rotation.x = -Math.PI/2; roadH.position.set(0, 0.004, 0);
+    city.add(roadH);
+
+    /* ---- 건물 ---- */
+    // [cx, cz, w, d, 높이, 주인공]
+    const defs = [
+      [-3.6,-3.6, 1.9, 1.9, 3.0],
+      [-1.4,-3.8, 1.4, 1.5, 2.1],
+      [-3.8,-1.5, 1.5, 1.4, 1.3],
+      [-1.6,-1.5, 1.6, 1.7, 4.1],
+      [ 1.7,-3.6, 1.9, 2.0, 4.9],
+      [ 3.9,-3.7, 1.2, 1.6, 2.4],
+      [ 1.6,-1.4, 1.9, 1.1, 1.7],
+      [ 3.8,-1.4, 1.4, 1.4, 3.4, true],   // ★ 137-4
+      [-3.7, 1.6, 1.7, 1.8, 2.6],
+      [-1.5, 1.5, 1.4, 1.4, 1.1],
+      [-3.6, 3.9, 1.9, 1.3, 3.6],
+      [-1.4, 3.7, 1.2, 1.7, 2.2],
+      [ 1.8, 1.8, 2.0, 1.9, 5.6],          // 최고층 타워
+      [ 4.0, 1.7, 1.0, 1.4, 1.9],
+      [ 1.9, 4.0, 1.6, 1.2, 1.5],
+      [ 4.0, 3.9, 1.2, 1.2, 2.8],
+    ];
+
+    /* ---- 창문 텍스처: 박스가 아니라 '건물'로 읽히게 ---- */
+    function windowTexture(bg, frame, glass){
+      const c = document.createElement('canvas'); c.width = c.height = 64;
+      const x = c.getContext('2d');
+      x.fillStyle = bg; x.fillRect(0,0,64,64);
+      x.fillStyle = glass; x.fillRect(15,12,34,40);
+      x.strokeStyle = frame; x.lineWidth = 3; x.strokeRect(15,12,34,40);
+      x.beginPath(); x.moveTo(32,12); x.lineTo(32,52);
+      x.moveTo(15,32); x.lineTo(49,32); x.stroke();
+      const tx = new THREE.CanvasTexture(c);
+      tx.wrapS = tx.wrapT = THREE.RepeatWrapping;
+      tx.anisotropy = 4;
+      return tx;
+    }
+    const winBase = windowTexture('#f1ebdb', '#3f382b', '#ded6be');
+    const winRed  = windowTexture('#e2593a', '#701f06', '#d14e2d');
+
+    function facadeMat(tex, bays, floors){
+      const t = tex.clone(); t.needsUpdate = true;
+      t.repeat.set(Math.max(1,bays), Math.max(1,floors));
+      return new THREE.MeshLambertMaterial({map:t});
+    }
+    const roofMatN  = new THREE.MeshLambertMaterial({color:0xf6f0e1});
+    const roofMatR  = new THREE.MeshLambertMaterial({color:0xe2593a});
+    const detailMat = new THREE.MeshLambertMaterial({color:0xeae2cd});
+    const edgeMat   = new THREE.LineBasicMaterial({color:INK, transparent:true, opacity:.9});
+    const heroEdge  = new THREE.LineBasicMaterial({color:0x8a2a0d});
+
+    let heroBuilding = null, heroH = 0;
+    const risers = [];
+
+    // 창문이 붙은 타워 몸통
+    function tower(w,h,d,isHero,yBase){
+      const floors = Math.max(2, Math.round(h/0.42));
+      const tex = isHero ? winRed : winBase;
+      const sideXZ = facadeMat(tex, Math.round(d/0.32), floors); // ±x 면
+      const sideZX = facadeMat(tex, Math.round(w/0.32), floors); // ±z 면
+      const mats = [sideXZ, sideXZ.clone(), isHero?roofMatR:roofMatN, detailMat, sideZX, sideZX.clone()];
+      const geo = new THREE.BoxGeometry(w,h,d);
+      geo.translate(0, yBase + h/2, 0);
+      const mesh = new THREE.Mesh(geo, mats);
+      const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo), isHero?heroEdge:edgeMat);
+      return [mesh, edges];
+    }
+
+    defs.forEach((def,di)=>{
+      const [cx,cz,w,d,h,isHero] = def;
+      const g = new THREE.Group();
+      let yBase = 0, totalH = h;
+
+      // 높은 건물엔 저층 포디움(상가층) — 셋백이 있는 매싱
+      const hasPodium = h > 3.0;
+      if(hasPodium){
+        const pw=w*1.3, pd=d*1.3, ph=0.5;
+        const pgeo = new THREE.BoxGeometry(pw,ph,pd);
+        pgeo.translate(0, ph/2, 0);
+        g.add(new THREE.Mesh(pgeo, detailMat));
+        g.add(new THREE.LineSegments(new THREE.EdgesGeometry(pgeo), isHero?heroEdge:edgeMat));
+        yBase = ph; totalH = h + ph;
+      }
+
+      const [mesh, edges] = tower(w,h,d,isHero,yBase);
+      g.add(mesh); g.add(edges);
+
+      // 옥탑: 엘리베이터 기계실 + 물탱크
+      if(h > 1.6){
+        const rw=w*0.32, rd=d*0.32, rh=0.24;
+        const rgeo = new THREE.BoxGeometry(rw,rh,rd);
+        rgeo.translate(-w*0.22, yBase+h+rh/2, d*0.18);
+        g.add(new THREE.Mesh(rgeo, detailMat));
+        g.add(new THREE.LineSegments(new THREE.EdgesGeometry(rgeo), isHero?heroEdge:edgeMat));
+        if(di % 2 === 0){
+          const tank = new THREE.Mesh(new THREE.CylinderGeometry(Math.min(w,d)*0.13, Math.min(w,d)*0.13, 0.2, 10), detailMat);
+          tank.position.set(w*0.22, yBase+h+0.1, -d*0.2);
+          g.add(tank);
+        }
+      }
+
+      g.position.set(cx, 0, cz);
+      city.add(g);
+
+      if(isHero){ heroBuilding = g; heroH = totalH; }
+
+      if(reduceMotion){ g.scale.y = 1; }
+      else{
+        g.scale.y = 0.001;
+        risers.push({g, delay: 700 + (cx+cz+10)*95 + Math.random()*160});
+      }
+    });
+
+    /* ---- 가로수 ---- */
+    const crownMat = new THREE.MeshLambertMaterial({color:0x93986a});
+    const crownEdge = new THREE.LineBasicMaterial({color:0x50552f, transparent:true, opacity:.45});
+    const trunkMat = new THREE.MeshLambertMaterial({color:0x6f5c40});
+    const spots = [];
+    for(let i=-4.3;i<=4.4;i+=1.15){
+      if(Math.abs(i)>0.95){ spots.push([i,-0.72]); spots.push([i,0.72]); }
+    }
+    [[-0.72,-3.6],[0.72,-2.4],[-0.72,2.6],[0.72,3.7],[-0.72,-1.6],[0.72,1.6]].forEach(s=>spots.push(s));
+    spots.forEach((s,i)=>{
+      const g = new THREE.Group();
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.05,0.28,5), trunkMat);
+      trunk.position.y = 0.14; g.add(trunk);
+      const crownGeo = new THREE.IcosahedronGeometry(0.19,0);
+      const crown = new THREE.Mesh(crownGeo, crownMat);
+      crown.position.y = 0.4; g.add(crown);
+      const ce = new THREE.LineSegments(new THREE.EdgesGeometry(crownGeo), crownEdge);
+      ce.position.y = 0.4; g.add(ce);
+      g.position.set(s[0], 0, s[1]);
+      g.rotation.y = i*1.7;
+      city.add(g);
+      if(!reduceMotion){ g.scale.set(0.001,0.001,0.001); risers.push({g, delay:1700+i*55, uniform:true}); }
+    });
+
+    /* ---- 노면 표시: 중앙 점선 + 횡단보도 ---- */
+    const paintMat = new THREE.MeshLambertMaterial({color:0xfdf9ec});
+    for(let p=-4.6; p<=4.6; p+=0.75){
+      if(Math.abs(p) < 1.1) continue;
+      const m1 = new THREE.Mesh(new THREE.PlaneGeometry(0.045,0.34), paintMat);
+      m1.rotation.x = -Math.PI/2; m1.position.set(0,0.012,p); city.add(m1);
+      const m2 = new THREE.Mesh(new THREE.PlaneGeometry(0.34,0.045), paintMat);
+      m2.rotation.x = -Math.PI/2; m2.position.set(p,0.012,0); city.add(m2);
+    }
+    for(const k of [-0.85, 0.85]){
+      for(let s=-0.38; s<=0.38; s+=0.15){
+        const c1 = new THREE.Mesh(new THREE.PlaneGeometry(0.09,0.32), paintMat);
+        c1.rotation.x = -Math.PI/2; c1.position.set(s,0.013,k); city.add(c1);
+        const c2 = new THREE.Mesh(new THREE.PlaneGeometry(0.32,0.09), paintMat);
+        c2.rotation.x = -Math.PI/2; c2.position.set(k,0.013,s); city.add(c2);
+      }
+    }
+
+    /* ---- 솟아오르기 ---- */
+    risers.forEach(({g,delay,uniform})=>{
+      setTimeout(()=>{
+        const t0 = performance.now(), dur = uniform ? 500 : 900;
+        (function grow(t){
+          const k = Math.min((t-t0)/dur, 1);
+          const e = 0.001 + (1-Math.pow(1-k,3))*0.999;
+          if(uniform) g.scale.set(e,e,e); else g.scale.y = e;
+          if(k<1) requestAnimationFrame(grow);
+        })(t0);
+      }, delay);
+    });
+
+    /* ---- 137-4 라벨: 3D 좌표를 화면에 투영 ---- */
+    const lotLabel = document.getElementById('lotLabel');
+    if(!reduceMotion) setTimeout(()=>lotLabel.classList.add('show'), 2600);
+    else lotLabel.classList.add('show');
+    function updateLabel(){
+      if(!heroBuilding) return;
+      const p = new THREE.Vector3(heroBuilding.position.x, heroH*heroBuilding.scale.y + 0.4, heroBuilding.position.z);
+      city.updateMatrixWorld();
+      p.applyMatrix4(city.matrixWorld).project(camera);
+      const rect = container.getBoundingClientRect();
+      const x = rect.left + ( p.x*0.5 + 0.5) * rect.width;
+      const y = rect.top  + (-p.y*0.5 + 0.5) * rect.height + scrollY;
+      lotLabel.style.left = x + 'px';
+      lotLabel.style.top  = (y - scrollY) + 'px';
+      lotLabel.style.position = 'fixed';
+      // 히어로 밖으로 스크롤되면 숨김
+      lotLabel.style.opacity = (scrollY > innerHeight*0.8 || !lotLabel.classList.contains('show')) ? 0 : 1;
+    }
+
+    /* ---- 회전: 저속 자동 + 마우스 반응 ---- */
+    let baseRot = 0, mouseRX = 0, curRX = 0, mouseRY = 0, curRY = 0;
+    addEventListener('mousemove',e=>{
+      mouseRX = (e.clientX/innerWidth - .5) * 0.5;   // 좌우 회전
+      mouseRY = (e.clientY/innerHeight - .5) * 0.12; // 살짝 기울기
+    });
+
+    function animate(){
+      if(!reduceMotion) baseRot += 0.0016; // 저속 턴테이블
+      curRX += (mouseRX-curRX)*0.05;
+      curRY += (mouseRY-curRY)*0.05;
+      city.rotation.y = baseRot + curRX;
+      city.rotation.x = curRY;
+      renderer.render(scene, camera);
+      updateLabel();
+      if(!reduceMotion) requestAnimationFrame(animate);
+    }
+    if(reduceMotion){ city.rotation.y = 0.4; renderer.render(scene,camera); updateLabel(); }
+    else requestAnimationFrame(animate);
+
+    addEventListener('resize',()=>{
+      W = container.offsetWidth; H = container.offsetHeight;
+      camera.left = -FR*W/H; camera.right = FR*W/H;
+      camera.updateProjectionMatrix();
+      renderer.setSize(W,H);
+      if(reduceMotion) renderer.render(scene,camera);
+    });
+    addEventListener('scroll', updateLabel);
+  })();
+
+  /* ================= 히어로 문구 ================= */
+  const HERO_COPY = '도시는 아는 만큼이 아니라,<br><em>읽는 만큼</em> 보입니다';
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  function renderCopy(html){
+    const elh = document.getElementById('heroLine');
+    elh.innerHTML = '';
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    let delay = reduceMotion ? 0 : 0.3;
+    function walk(node, parent){
+      node.childNodes.forEach(n=>{
+        if(n.nodeType === 3){
+          [...n.textContent].forEach(ch=>{
+            if(ch === ' '){ parent.appendChild(document.createTextNode(' ')); return; }
+            const s = document.createElement('span');
+            s.className = 'ch';
+            s.textContent = ch;
+            s.style.animationDelay = delay + 's';
+            delay += 0.04;
+            parent.appendChild(s);
+          });
+        } else if(n.nodeName === 'BR'){
+          parent.appendChild(document.createElement('br'));
+        } else if(n.nodeName === 'EM'){
+          const em = document.createElement('em');
+          parent.appendChild(em);
+          walk(n, em);
+          const u = document.createElementNS(SVGNS,'svg');
+          u.setAttribute('class','u');
+          u.setAttribute('viewBox','0 0 100 12');
+          u.setAttribute('preserveAspectRatio','none');
+          const p = document.createElementNS(SVGNS,'path');
+          p.setAttribute('d','M2 8 C 20 3, 45 10, 62 6 S 92 4, 98 7');
+          u.appendChild(p);
+          em.appendChild(u);
+          const len = 130;
+          p.style.strokeDasharray = len;
+          p.style.strokeDashoffset = reduceMotion ? 0 : len;
+          if(!reduceMotion){
+            p.style.transition = 'stroke-dashoffset .8s ease ' + (delay + 0.3) + 's';
+            requestAnimationFrame(()=>requestAnimationFrame(()=>{ p.style.strokeDashoffset = 0; }));
+          }
+        }
+      });
+    }
+    walk(tmp, elh);
+    if(reduceMotion) elh.querySelectorAll('.ch').forEach(s=>{s.style.opacity=1;s.style.transform='none'});
+  }
+  renderCopy(HERO_COPY);
+
+  /* ================= 마퀴 ================= */
+  const words = ['도시를 읽고','이야기를 만듭니다','REAL ESTATE','URBAN PLANNING','미국 부동산 실무','다내꼬','돌아온 탕묘 유칠복','도시를 읽는 강의','CITIES & STORIES'];
+  const track = document.getElementById('marqueeTrack');
+  track.innerHTML = (words.map(w=>`<span>${w}</span>`).join('')).repeat(2);
+
+  /* ================= 크로스헤어 커서 ================= */
+  const xv = document.getElementById('xhV'), xh = document.getElementById('xhH'),
+        xd = document.getElementById('xhDot'), xl = document.getElementById('xhLabel');
+  addEventListener('mousemove',e=>{
+    xv.style.left = e.clientX + 'px';
+    xh.style.top = e.clientY + 'px';
+    xd.style.left = e.clientX + 'px';
+    xd.style.top = e.clientY + 'px';
+    xl.style.left = e.clientX + 'px';
+    xl.style.top = e.clientY + 'px';
+    xl.textContent = 'X:' + String(e.clientX).padStart(4,'0') + ' Y:' + String(e.clientY).padStart(4,'0');
+  });
+  document.querySelectorAll('[data-hover]').forEach(el2=>{
+    el2.addEventListener('mouseenter',()=>xd.classList.add('hovering'));
+    el2.addEventListener('mouseleave',()=>xd.classList.remove('hovering'));
+  });
+
+  /* ================= 인장 ================= */
+  const seal = document.getElementById('seal');
+  new IntersectionObserver((es,ob)=>{
+    es.forEach(e=>{ if(e.isIntersecting){ setTimeout(()=>seal.classList.add('stamped'), 500); ob.disconnect(); } });
+  },{threshold:.4}).observe(seal);
+
+  /* ================= scroll reveal ================= */
+  const io = new IntersectionObserver(es=>{
+    es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('visible'); io.unobserve(e.target);} });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(el2=>io.observe(el2));
+</script>
+</body>
+</html>
